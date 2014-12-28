@@ -376,14 +376,13 @@
                             replace_key(selection[i], result.key, settings.keys, settings.replace_existing);
                         }
 
-                        itunes.displayDialog(
-                            'Done!',
-                            { buttons: ['Thanks!'] }
-                        );
-
-
                     } // End of is fileTrack
                 } // End of Iterate selection
+
+                itunes.displayDialog(
+                    'Done!',
+                    { buttons: ['Thanks!'] }
+                );
 
             } else {
                 // If no tracks selected
@@ -394,16 +393,10 @@
             }
         } else {
             // If djay doesn't quit
-            app.displayDialog(
-                'Please quit djay first and try again!',
-                { buttons: ['OK'] }
-            );
+            app.displayAlert('Please quit djay first and try again!');
         }
     } else {
         // If no djay database found
-        app.displayDialog(
-            'No djay database found! Please check djay installed.',
-            { buttons: ['OK'] }
-        );
+        app.displayAlert('No djay database found! Please check djay installed.');
     }
 })();
