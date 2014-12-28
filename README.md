@@ -9,7 +9,8 @@ Copy BPMs and Keys calculated in Algoriddim **djay** or **djay Pro** for Mac to 
 
 With this script you can copy BPMs and Keys from Algoriddim djay to iTunes. BPM will be copied to `BPM` tag. Key  will be added at the beginning of `Grouping` tag. Example: `11B-A Bluesdance` or `9B-G WCS`
  
- ## Compatibility
+## Compatibility
+
  - djay Pro 1.0 / djay 4.2.2
  - iTunes 12.0.1
  - Mac OS X 10.10.1
@@ -17,6 +18,7 @@ With this script you can copy BPMs and Keys from Algoriddim djay to iTunes. BPM 
 **Use at your own risk!** It's recommended to backup iTunes library first.
 
 ## Usage 
+
 1. Analize tracks using Algoriddim djay Pro / djay (Library -> Analyze)
 2. Close djay application
 3. Open iTunes and select necessary tracks
