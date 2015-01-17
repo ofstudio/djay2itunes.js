@@ -1,12 +1,12 @@
 /**
  * djay2itunes.js
- * 
+ *
  * @overview Get BPMs and Keys from Algoriddim djay or djay Pro to iTunes
  * @see {@link https://github.com/ofstudio/djay2itunes.js}
  * @author Oleg Fomin <ofstudio@gmail.com>
- * @version: 0.0.2
- * 28 December 2014
- *     
+ * @version: 0.0.3
+ * 15 January 2015
+ *
  */
 /**
  * @external Application
@@ -17,24 +17,25 @@
 /**
  * @external PropertyListFile
  */
-
-
-;(function () {
+/**
+ * @external Progress
+ */
+function run() {
 
     /**
      * Application Settings
-     * 
+     *
      * @typedef {Object}
-     * @property {Array} djay_versions - array of names, database paths and priorities to use
-     * @property {Object} djay - actual djay version from djay_versions, see `check_djay_installed`
-     * @property {String} file_auto - plist file name with automatic calculated BPM and Keys
-     * @property {String} file_manual-  plist file name with automatic calculated BPM and Keys
+     * @property {Array} djayVersions - array of names, database paths and priorities to use
+     * @property {Object} djay - actual djay version from djayVersions, see `checkDjayInstalled`
+     * @property {String} fileAuto - plist file name with automatic calculated BPM and Keys
+     * @property {String} fileManual-  plist file name with automatic calculated BPM and Keys
      * @property {String} fields - Fields to replace: 'BPM', 'Key' or 'Both'
-     * @property {Boolean} replace_existing - Replace existing iTunes tags or not 
+     * @property {Boolean} replaceExisting - Replace existing iTunes tags or not
      * @property {Array} keys - names of Keys
      */
     var settings = {
-        djay_versions: [
+        djayVersions: [
             {
                 name: 'djay Pro',
                 priority: 0, // Newer version - higher priority
@@ -47,10 +48,10 @@
             }
         ],
         djay: undefined,
-        file_auto: 'djay Cached Data.plist', // Database with automatic values
-        file_manual: 'djay Preset Library.plist', // Database with manual values
+        fileAuto: 'djay Cached Data.plist', // Database with automatic values
+        fileManual: 'djay Preset Library.plist', // Database with manual values
         fields: undefined,
-        replace_existing: undefined,
+        replaceExisting: undefined,
         keys: [
             '8B-C', '8A-Am', '3B-Db', '3A-Bbm', '10B-D', '10A-Bm',
             '5B-Eb', '5A-Cm', '12B-E', '12A-C#m', '7B-F', '7A-Dm',
@@ -63,58 +64,59 @@
     /**
      * Find djay version installed by database paths
      *
-     * @param {Array} djay_versions - Array of djay objects
+     * @param {Array} djayVersions - Array of djayVersions {@see settings}
      * @returns {boolean} - False if no djay database found
-     * @returns {Object} - Found djay objects with highest priority (lower priority number)
+     * @returns {Object} - Found djay object with highest priority (lower number)
      */
-    var check_djay_installed = function (djay_versions) {
+    var checkDjayInstalled = function (djayVersions) {
         var result = false,
             system = new Application('System Events');
-        for (var i = 0; i < djay_versions.length; i++) {
+        for (var i = 0; i < djayVersions.length; i++) {
             // If path exists
-            if (system.folders.byName(djay_versions[i].path).exists()) {
+            if (system.folders.byName(djayVersions[i].path).exists()) {
                 // and with higher priority
-                if (result === false || djay_versions[i].priority < result.priority) {
-                    result = djay_versions[i];
+                if (result === false || djayVersions[i].priority < result.priority) {
+                    result = djayVersions[i];
                 }
             }
         }
         return result;
     };
-    
-    
+
+
     /**
      * Quit application if running
-     * 
-     * @param {String} app_name - Name of application to quit
+     *
+     * @param {String} appName - Name of application to quit
      * @param {boolean} ask - Confirm quit or not
      * @returns {boolean} - Result
      */
-    var quit_if_running = function (app_name, ask) {
-        var quit_confirm = false,
+    var quitIfRunning = function (appName, ask) {
+        var quitConfirm = false,
             system = new Application('System Events'),
-            quit_result, djay;
-        if (system.processes.name().indexOf(app_name) > 0) {
+            quitResult, djay;
+        if (system.processes.name().indexOf(appName) > 0) {
             if (ask) {
-                djay = new Application(app_name);
+                djay = new Application(appName);
                 djay.includeStandardAdditions = true;
-                quit_confirm = djay.displayDialog(
-                    'We must quit ' + app_name + ' before we continue',
+                quitConfirm = djay.displayDialog(
+                    'We must quit ' + appName + ' before we continue',
                     {
-                        buttons: ['Cancel', ('Quit ' + app_name)],
-                        defaultButton: ('Quit ' + app_name)
+                        buttons: ['Cancel', ('Quit ' + appName)],
+                        defaultButton: ('Quit ' + appName)
                     }
-                ).buttonReturned == ('Quit ' + app_name);
+                ).buttonReturned == ('Quit ' + appName);
             } else {
-                quit_confirm = true;
+                quitConfirm = true;
             }
-            if (quit_confirm) {
+            if (quitConfirm) {
                 try {
-                    quit_result = djay.quit();
-                } catch (e) {
+                    quitResult = djay.quit();
+                }
+                catch (e) {
                     return false;
                 }
-                return quit_result;
+                return quitResult;
             } else {
                 // User canceled
                 return false;
@@ -127,13 +129,13 @@
 
     /**
      * UI: Ask for fields to copy
-     * 
-     * @param {Application} itunes
+     *
+     * @param {Application} app
      * @returns {string} - 'BPM', 'Key' or 'Both'
      */
-    var ask_fields = function (itunes) {
-        return (itunes.displayDialog(
-            'Which fields do you want?',
+    var askFields = function (app) {
+        return (app.displayDialog(
+            'Which fields do you want from ' + settings.djay.name + '?',
             {
                 buttons: ['BPM', 'Key', 'Both'],
                 defaultButton: 'Both'
@@ -144,12 +146,12 @@
 
     /**
      * UI: Ask to replace existing iTunes tags or not
-     * 
-     * @param {Application} itunes
+     *
+     * @param {Application} app
      * @returns {boolean}
      */
-    var ask_replace_existing = function (itunes) {
-        return (itunes.displayDialog(
+    var askReplaceExisting = function (app) {
+        return (app.displayDialog(
             'Replace existing iTunes data?',
             {
                 buttons: ['No', 'Yes'],
@@ -162,118 +164,111 @@
     /**
      * Attempts to get BPM and Key for single track
      * @param {Track} track
-     * @param {PropertyListFile} plist_auto - Plist database with auto calculated values
-     * @param {PropertyListFile} plist_manual - Plist database with manual calculated values
-     * @returns {{bpm: Number, key: Number}} - BPM value and Key index
-     * @returns {{bpm: Number, key: boolean}} - bpm: 0 and/or key: false if not found
+     * @param {PropertyListFile} plistAuto - Plist database with auto calculated values
+     * @param {PropertyListFile} plistManual - Plist database with manual calculated values
+     * @returns {{bpm: Number, key: Number}} - BPM value and Key index or undefined if none
      */
-    var get_data = function (track, plist_auto, plist_manual) {
+    var getData = function (track, plistAuto, plistManual) {
 
         /**
          * Some items in djay database are stored as iTunes persistent IDs
          * But some items stored as "slugs":
-         * `song    artist   duration` 
+         * `song    artist   duration`
          * in lowercase and separated by tabs (\t)
-         * 
+         *
          * @param {Track} track
          * @returns {string} - Returns slug for song
          */
-        var track_slug = function (track) {
+        var trackSlug = function (track) {
             return track.name().toLocaleLowerCase() + '\t' +
                 track.artist().toLocaleLowerCase() + '\t' +
-                Math.floor(track.duration()); 
-                // Not sure that `floor` is always right but in some cases `round` is wrong
+                Math.floor(track.duration());
+            // Not sure that `floor` is always right but in some cases `round` is wrong
         };
 
         /**
-         * Try to get BPM and Key from plist  with auto calculated values
-         * 
-         * @param {String} name - iTunes persistent ID or song "slug"
-         * @param {PropertyListFile} plist
-         * @returns {{bpm: Number, key: Number}} - BPM value and Key index
-         * @returns {{bpm: Number, key: boolean}} - bpm: 0 and/or key: false if not found
-         */
-        var get_auto = function (name, plist) {
-            var bpm = 0, key = false;
-            try {
-                bpm = plist.byName(name).value()['bpm'];
-                key = plist.byName(name).value()['key'];
-            } catch (e) {
-            }
-            return {bpm: Math.round(bpm), key: key};
-        };
-
-        /**
-         * Try to get BPM and Key from plist with manual calculated values
+         * Try to get value of BPM or Key field from plist
+         * Fields for plistAuto: 'bpm', 'key'
+         * Fields for plistManual: 'song.manualBpm', 'song.manualKey'
          *
          * @param {String} name - iTunes persistent ID or song "slug"
          * @param {PropertyListFile} plist
-         * @returns {{bpm: Number, key: Number}} - BPM value and Key index
-         * @returns {{bpm: Number, key: boolean}} - bpm: 0 and/or key: false if not found
+         * @param {String} field - name of field in database
+         * @returns {Number} -  value or undefined if none
          */
-        var get_manual = function (name, plist) {
-            var bpm = 0, key = false;
+        var getValue = function (name, plist, field) {
+            var value;
             try {
-                bpm = plist.byName(name).value()['song.manualBpm'];
-                key = plist.byName(name).value()['song.manualKey'];
+                value = plist.byName(name).value()[field];
             } catch (e) {
             }
-            return {bpm: Math.round(bpm), key: key};
+            // console.log('Name: ' + name + ' | Field: ' + field + ' | Value: ' +value);
+            // Math.round for BPM values 
+            return typeof value === 'number' ? Math.round(value) : undefined
         };
+        
 
-        var r = {
-            file_auto: {
-                byID: {bpm: false, key: false},
-                bySlug: {bpm: false, key: false}
-            },
-            file_manual: {
-                byID: {bpm: false, key: false},
-                bySlug: {bpm: false, key: false}
-            }
-        };
+        var bpm, key,
+            id = track.persistentID(),
+            slug = trackSlug(track),
+            isNumber = function (value, i, a) {
+                return typeof value === 'number'
+            };
 
-        // Try to find by slug and persistent ID in plist_auto and plist_manual
-        r.file_auto.byID = get_auto(track.persistentID(), plist_auto);
-        r.file_auto.bySlug = get_auto(track_slug(track), plist_auto);
-        r.file_manual.byID = get_manual(track.persistentID(), plist_manual);
-        r.file_manual.bySlug = get_manual(track_slug(track), plist_manual);
+        // Try to get BPM and Key values in plistAuto and plistManual
+        // by persistentID() and by trackSlug
+        bpm = [
+            getValue(slug, plistManual, 'song.manualBpm'),
+            getValue(id, plistManual, 'song.manualBpm'),
+            getValue(slug, plistAuto, 'bpm'),
+            getValue(id, plistAuto, 'bpm')
+        ].find(isNumber);
+        
+        key = [
+            getValue(slug, plistManual, 'song.manualKey'),
+            getValue(id, plistManual, 'song.manualKey'),
+            getValue(slug, plistAuto, 'key'),
+            getValue(id, plistAuto, 'key')
+        ].find(isNumber);
 
-        // Return most appropriate value
         return {
-            bpm: r.file_manual.bySlug.bpm || r.file_manual.byID.bpm || r.file_auto.bySlug.bpm || r.file_auto.byID.bpm,
-            key: r.file_manual.bySlug.key || r.file_manual.byID.key || r.file_auto.bySlug.key || r.file_auto.byID.key
-        };
+            bpm: bpm,
+            key: key
+        }
     };
 
 
     /**
      * Replace BPM tag in iTunes
-     * 
+     *
      * @param {Track} track
      * @param {Number} bpm
      * @param {Boolean} overwrite
+     * @returns {Boolean} - true if replaced, false if no
      */
-    var replace_bpm = function (track, bpm, overwrite) {
+    var replaceBPM = function (track, bpm, overwrite) {
         if (bpm > 0) {
             if (track.bpm() === 0 || overwrite) {
                 track.bpm = bpm;
+                return true;
             }
         }
+        return false;
     };
 
-    
+
     /**
      *  Replace Key in Grouping tag in iTunes
-     *  
+     *
      * @param {Track} track
      * @param {String} key
-     * @param {Array} keys
      * @param {Boolean} overwrite
+     * @returns {Boolean} - true if replaced, false if no
      */
-    var replace_key = function (track, key, keys, overwrite) {
+    var replaceKey = function (track, key, overwrite) {
         var current = track.grouping(),
-            // find any value from key in current
-            exists = keys.some(function (k) {
+        // find any value from key in current
+            exists = settings.keys.some(function (k) {
                 var found = false;
                 // if any value from keys exists in current, remove it nicely
                 if (current.indexOf(k) >= 0) {
@@ -289,14 +284,16 @@
         if (key.length > 0) {
             if ((exists && overwrite) || (!exists)) {
                 track.grouping = key + ' ' + current;
+                return true;
             }
         }
+        return false;
     };
 
-    
+
     /**
      * Main application
-     * 
+     *
      * 1. Check for djay installed
      * 2. Quit djay if running
      * 3. Check if any tracks are selected in iTunes
@@ -308,95 +305,98 @@
 
     var app = Application.currentApplication();
     app.includeStandardAdditions = true;
+    app.activate();
 
     // Check for djay installed
-    settings.djay = check_djay_installed(settings.djay_versions);
-    
-    if (settings.djay) {
-        if (quit_if_running(settings.djay.name, true)) {
-            
-            var itunes = new Application('iTunes'),
-                selection = itunes.selection();
-            
-            itunes.includeStandardAdditions = true;
-            itunes.activate();
-
-            // if tracks selected
-            if (selection.length > 0) {
-                // Get fields and replace settings
-                settings.fields = ask_fields(itunes);
-                settings.replace_existing = ask_replace_existing(itunes);
-
-                var system = new Application('System Events'),
-                    result, plist_auto, plist_manual;
-
-                // Try to open database plist files
-                try {
-                    plist_auto = system.propertyListFiles.byName(
-                        settings.djay.path + settings.file_auto)
-                        .propertyListItems;
-                    plist_manual = system.propertyListFiles.byName(
-                        settings.djay.path + settings.file_manual)
-                        .propertyListItems.byName('Song Entries')
-                        .propertyListItems;
-                } catch (e) {
-                    app.displayDialog('Error! Can\'t open database: ' + e.message);
-                }
-
-                // Iterate selection
-                for (var i = 0; i < selection.length; i++) {
-                    if (selection[i].class() === 'fileTrack') {
-                        result = {bpm: false, key: false};
-                        result = get_data(selection[i], plist_auto, plist_manual);
-                        if (result.key) {
-                            result.key = settings.keys[result.key];
-                        } else {
-                            result.key = '';
-                        }
-
-                        //console.log(
-                        //    'Calculated :' + selection[i].name() +
-                        //    ' | BPM: ' + result.bpm +
-                        //    ' | Key: ' + result.key
-                        //);
-                        //
-                        //console.log(
-                        //    'Exists :' + selection[i].name() +
-                        //    ' | BPM: ' + selection[i].bpm() +
-                        //    ' | Grouping: ' + selection[i].grouping()
-                        //);
-                        
-                        // Replace BPM tag
-                        if (settings.fields === 'BPM' || settings.fields === 'Both') {
-                            replace_bpm(selection[i], result.bpm, settings.replace_existing);
-                        }
-                        
-                        // Replace Key in Grouping tag
-                        if (settings.fields === 'Key' || settings.fields === 'Both') {
-                            replace_key(selection[i], result.key, settings.keys, settings.replace_existing);
-                        }
-
-                    } // End of is fileTrack
-                } // End of Iterate selection
-
-                itunes.displayDialog(
-                    'Done!',
-                    { buttons: ['Thanks!'] }
-                );
-
-            } else {
-                // If no tracks selected
-                itunes.displayDialog(
-                    'Please select a few tracks in iTunes and try again!',
-                    { buttons: ['OK'] }
-                );
-            }
-        } else {
-            // If djay doesn't quit
-            app.displayAlert('Please quit djay first and try again!');
-        }
-    } else {
-        // If no djay database found
+    settings.djay = checkDjayInstalled(settings.djayVersions);
+    if (!settings.djay) {
         app.displayAlert('No djay database found! Please check djay installed.');
+        return false;
     }
-})();
+
+    if (!quitIfRunning(settings.djay.name, true)) {
+        app.displayAlert('Please quit djay first and try again!');
+        return false;
+    }
+
+    var itunes = new Application('iTunes'),
+        selection = itunes.selection();
+
+    itunes.includeStandardAdditions = true;
+
+    if (!selection.length > 0) {
+        // If no tracks selected
+        itunes.activate();
+        itunes.displayAlert('Please select a few tracks in iTunes and try again!');
+        return false;
+    }
+
+    var system = new Application('System Events'),
+        result, plistAuto, plistManual, replacedFlag, replacedCounter;
+
+    // Try to open database plist files
+    try {
+        plistAuto = system.propertyListFiles.byName(
+            settings.djay.path + settings.fileAuto)
+            .propertyListItems;
+        plistManual = system.propertyListFiles.byName(
+            settings.djay.path + settings.fileManual)
+            .propertyListItems.byName('Song Entries')
+            .propertyListItems;
+    } catch (e) {
+        app.displayAlert('Error! Can\'t open database: ' + e.message);
+        return false;
+    }
+
+    // Get fields and replace existing settings
+    settings.fields = askFields(app);
+    settings.replaceExisting = askReplaceExisting(app);
+
+    Progress.totalUnitCount = selection.length;
+    Progress.description = 'Processing tracks';
+    replacedCounter = 0;
+
+    // Iterate selection
+    for (var i = 0; i < selection.length; i++) {
+
+        if (selection[i].class() === 'fileTrack') {
+
+            result = getData(selection[i], plistAuto, plistManual);
+            if (typeof result.key === 'number') {
+                result.key = settings.keys[result.key] || '';
+            } else {
+                result.key = '';
+            }
+
+            //console.log('Calculated:' + selection[i].name() +
+            //' | BPM: ' + result.bpm +
+            //' | Key: ' + result.key);
+            //console.log('Existing:' + selection[i].name() +
+            //' | BPM: ' + selection[i].bpm() +
+            //' | Grouping: ' + selection[i].grouping());
+
+            // Replace BPM tag
+            if (settings.fields === 'BPM' || settings.fields === 'Both') {
+                replacedFlag = replaceBPM(selection[i], result.bpm, settings.replaceExisting);
+            }
+
+            // Replace Key in Grouping tag
+            if (settings.fields === 'Key' || settings.fields === 'Both') {
+                replacedFlag = replaceKey(selection[i], result.key, settings.replaceExisting) || replacedFlag;
+            }
+
+            replacedCounter += (replacedFlag ? 1 : 0);
+            Progress.completedUnitCount = i + 1;
+        }
+    }
+
+    itunes.activate();
+    app.displayNotification(
+        'Processed ' + replacedCounter + ' of ' + selection.length + ' selected tracks',
+        {
+            withTitle: 'djay2itunes',
+            subtitle: 'Done!'
+        }
+    );
+    return true;
+}

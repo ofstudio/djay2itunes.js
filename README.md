@@ -1,15 +1,17 @@
 djay2itunes.js
 ==============
 
-Copy BPMs and Keys calculated in Algoriddim **djay** or **djay Pro** for Mac to iTunes meta tags.
+Copy BPMs and Keys calculated in Algoriddim **djay** or **[djay Pro](https://www.algoriddim.com/djay-mac)** for Mac to iTunes meta tags.
 
-- Version: 0.0.2 / 28 Dec 2014
+- Version: 0.0.3 / 15 January 2015
 - Author: [Oleg Fomin](http://ofstudio.ru)
 - Email: [ofstudio@gmail.com](mailto:ofstudio@gmail.com)
 
 With this script you can copy BPMs and Keys from Algoriddim djay to iTunes. BPM will be copied to `BPM` tag. Key  will be added at the beginning of `Grouping` tag. Example: `11B-A Bluesdance` or `9B-G WCS`
  
 ## Compatibility
+
+Tested on:
 
  - djay Pro 1.0 / djay 4.2.2
  - iTunes 12.0.1
@@ -27,33 +29,22 @@ With this script you can copy BPMs and Keys from Algoriddim djay to iTunes. BPM 
 6. Choose overwrite existing tags or not
 7. Done!
 
-
-## In depth
-
-### djay database
-
-...
-
-#### Database location
-
-...
-
-#### Database index format
-
-...
-
-
 ## Version history
+    
+* _2015-01-15_ / **v0.0.3**
+    - Fixed error with '8B-C' key (zero index vs false value)
+    - Added notification
+    - Added progress bar
+    - Bug fixes
 
 * _2014-12-28_ / **v0.0.2**   
-    - Rewrited in JavaScript
-    - Both djay Pro and djay are supporded
+    - JavaScript instead of AppleScript
+    - Both djay Pro and djay are supported
     
 * _2014-07-01_ / **v0.0.1**   
     - Based on [Get bpm and key from Djay.scpt](http://edmondcho.com/2012/02/28/copy-calculated-bpm-data-from-algoriddim-djay-to-itunes-using-applescript/) by [djmumbler](https://twitter.com/djmumbler)
     - Write Key at the _beginnig_ of `Grouping` tag so sorting can be applied.
     - Fixed djay manual calculated bpm workaround (file `djay Preset Library.plist`).
-
 
 ## License 
 
