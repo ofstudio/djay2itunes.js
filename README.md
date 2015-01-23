@@ -24,7 +24,8 @@ Tested on:
 1. Analize tracks using Algoriddim djay Pro / djay (Library -> Analyze)
 2. Close djay application
 3. Open iTunes and select necessary tracks
-4. Run `djay2itunes.app` (or open djay2itunes.js in Script Editor and run)
+4. Run `djay2itunes.app` (or open djay2itunes.js in Script Editor and run)   
+**Note:**  app is not signed. Open  `djay2itunes.app` by "right-click" -> Open to avoid security warnings.
 5. Select fields to copy: `BPM`, `Key` or both of them
 6. Choose overwrite existing tags or not
 7. Done!
