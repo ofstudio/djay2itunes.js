@@ -33,6 +33,10 @@ Tested on:
 7. Done!
 
 ## Version history
+
+* _2016-02-09_ / **v0.0.4**
+    - Fixed #1 issue with track duration
+
     
 * _2015-01-15_ / **v0.0.3**
     - Fixed error with '8B-C' key (zero index vs false value)

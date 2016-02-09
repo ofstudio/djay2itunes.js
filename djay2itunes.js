@@ -4,8 +4,8 @@
  * @overview Get BPMs and Keys from Algoriddim djay or djay Pro to iTunes
  * @see {@link https://github.com/ofstudio/djay2itunes.js}
  * @author Oleg Fomin <ofstudio@gmail.com>
- * @version: 0.0.3
- * 15 January 2015
+ * @version: 0.0.4
+ * 9 February 2016
  *
  */
 /**
@@ -175,15 +175,22 @@ function run() {
          * But some items stored as "slugs":
          * `song    artist   duration`
          * in lowercase and separated by tabs (\t)
+         * 
+         * Because djay determines duration of the track slightly different than iTunes 
+         * and sometimes track duration in iTunes and in djay differs in 1 second up or down
+         * we must search in 2 different slugs with ±1 second duration
          *
          * @param {Track} track
-         * @returns {string} - Returns slug for song
+         * @returns {Array} - Returns an array of possible slugs
          */
-        var trackSlug = function (track) {
-            return track.name().toLocaleLowerCase() + '\t' +
-                track.artist().toLocaleLowerCase() + '\t' +
-                Math.floor(track.duration());
-            // Not sure that `floor` is always right but in some cases `round` is wrong
+        var trackSlugs = function (track) {
+            var nameAndArtist = track.name().toLocaleLowerCase() + '\t' + track.artist().toLocaleLowerCase(),
+                duration = track.duration();
+            
+            return [
+                nameAndArtist + '\t' + Math.floor(duration),
+                nameAndArtist + '\t' + Math.ceil(duration)
+            ];
         };
 
         /**
@@ -198,11 +205,12 @@ function run() {
          */
         var getValue = function (name, plist, field) {
             var value;
+
             try {
                 value = plist.byName(name).value()[field];
             } catch (e) {
             }
-            // console.log('Name: ' + name + ' | Field: ' + field + ' | Value: ' +value);
+
             // Math.round for BPM values 
             return typeof value === 'number' ? Math.round(value) : undefined
         };
@@ -210,24 +218,28 @@ function run() {
 
         var bpm, key,
             id = track.persistentID(),
-            slug = trackSlug(track),
+            slugs = trackSlugs(track),
             isNumber = function (value, i, a) {
                 return typeof value === 'number'
             };
 
         // Try to get BPM and Key values in plistAuto and plistManual
-        // by persistentID() and by trackSlug
+        // by persistentID() and by possible track slugs
         bpm = [
-            getValue(slug, plistManual, 'song.manualBpm'),
+            getValue(slugs[0], plistManual, 'song.manualBpm'),
+            getValue(slugs[1], plistManual, 'song.manualBpm'),
             getValue(id, plistManual, 'song.manualBpm'),
-            getValue(slug, plistAuto, 'bpm'),
+            getValue(slugs[0], plistAuto, 'bpm'),
+            getValue(slugs[1], plistAuto, 'bpm'),
             getValue(id, plistAuto, 'bpm')
         ].find(isNumber);
         
         key = [
-            getValue(slug, plistManual, 'song.manualKey'),
+            getValue(slugs[0], plistManual, 'song.manualKey'),
+            getValue(slugs[1], plistManual, 'song.manualKey'),
             getValue(id, plistManual, 'song.manualKey'),
-            getValue(slug, plistAuto, 'key'),
+            getValue(slugs[0], plistAuto, 'key'),
+            getValue(slugs[1], plistAuto, 'key'),
             getValue(id, plistAuto, 'key')
         ].find(isNumber);
 
