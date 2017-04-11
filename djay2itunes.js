@@ -4,8 +4,8 @@
  * @overview Get BPMs and Keys from Algoriddim djay or djay Pro to iTunes
  * @see {@link https://github.com/ofstudio/djay2itunes.js}
  * @author Oleg Fomin <ofstudio@gmail.com>
- * @version: 0.0.4
- * 9 February 2016
+ * @version: 0.0.5
+ * 12 April 2017
  *
  */
 /**
@@ -45,6 +45,11 @@ function run() {
                 name: 'djay',
                 priority: 1, // Legacy version - lower priority
                 path: '~/Music/djay/'
+            },
+            {
+                name: 'djay Pro',
+                priority: 2, // Quick-n-dirty workaround on issue #2
+                path: '/Volumes/VCA/WORK/musique/djay/'
             }
         ],
         djay: undefined,
@@ -175,8 +180,8 @@ function run() {
          * But some items stored as "slugs":
          * `song    artist   duration`
          * in lowercase and separated by tabs (\t)
-         * 
-         * Because djay determines duration of the track slightly different than iTunes 
+         *
+         * Because djay determines duration of the track slightly different than iTunes
          * and sometimes track duration in iTunes and in djay differs in 1 second up or down
          * we must search in 2 different slugs with ±1 second duration
          *
@@ -186,7 +191,7 @@ function run() {
         var trackSlugs = function (track) {
             var nameAndArtist = track.name().toLocaleLowerCase() + '\t' + track.artist().toLocaleLowerCase(),
                 duration = track.duration();
-            
+
             return [
                 nameAndArtist + '\t' + Math.floor(duration),
                 nameAndArtist + '\t' + Math.ceil(duration)
@@ -211,10 +216,10 @@ function run() {
             } catch (e) {
             }
 
-            // Math.round for BPM values 
+            // Math.round for BPM values
             return typeof value === 'number' ? Math.round(value) : undefined
         };
-        
+
 
         var bpm, key,
             id = track.persistentID(),
@@ -233,7 +238,7 @@ function run() {
             getValue(slugs[1], plistAuto, 'bpm'),
             getValue(id, plistAuto, 'bpm')
         ].find(isNumber);
-        
+
         key = [
             getValue(slugs[0], plistManual, 'song.manualKey'),
             getValue(slugs[1], plistManual, 'song.manualKey'),
