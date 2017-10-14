@@ -21,7 +21,7 @@ Tested on:
 
 ## Usage
 
-**[Step-by-step manual](http://yesnomaybe.ofstudio.ru/2015/01/23/djay2itunes-pierienos-mietadannykh-is-djay-pro-v-itunes/)** in Russian.
+**[Step-by-step manual](https://yesnomaybe.ru/2015/01/23/djay2itunes/)** in Russian.
 
 1. Analize tracks using Algoriddim djay Pro / djay (Library -> Analyze)
 2. Close djay application
